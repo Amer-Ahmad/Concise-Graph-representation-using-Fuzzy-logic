@@ -1,0 +1,29 @@
+FUNCTION_BLOCK
+VAR_INPUT
+    EstimatedDist  :    REAL;
+END_VAR
+
+VAR_OUTPUT
+    NeighborStatus : REAL;
+END_VAR
+
+FUZZIFY EstimatedDist
+    TERM Closetobigr := trian 0 0 0.6;
+    TERM Closetosmallr := trian 0.4 1 1;
+END_FUZZIFY
+
+DEFUZZIFY NeighborStatus
+    TERM NotNeighbours := trian 0 0 0.5;
+    TERM AreNeighbours := trian 0.5 1 1;
+	METHOD: COG;
+END_DEFUZZIFY
+
+RULEBLOCK rules
+
+AND:MIN;
+ACT:MIN;
+ACCU:MAX;
+RULE 0: IF EstimatedDist IS Closetosmallr AND EstimatedDist IS NOT Closetobigr THEN NeighborStatus IS AreNeighbours;
+RULE 1: IF EstimatedDist IS Closetobigr AND EstimatedDist IS NOT Closetosmallr THEN NeighborStatus IS NotNeighbours;
+END_RULEBLOCK
+END_FUNCTION_BLOCK
