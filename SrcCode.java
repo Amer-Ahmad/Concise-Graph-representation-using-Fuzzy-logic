@@ -1,13 +1,13 @@
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
-import java.util.Stack;
 
+import mdsj.MDSJ;
 import mdsj.StressMinimization;
 import net.sourceforge.jFuzzyLogic.FIS;
 import net.sourceforge.jFuzzyLogic.rule.Variable;
@@ -21,8 +21,9 @@ public class SrcCode {
     static int col = -1;
     static int n = 0;
     static int o1, o2;
-    static int k = 50;
+    static int k = 2;
     static double d[][];
+    static double dist[][];
     static int adj[][];
     static FIS fis;
     final static double eps = 0.000001;
@@ -57,12 +58,13 @@ public class SrcCode {
         
        
         
-        File input = new File("C:\\Users\\USP\\eclipse-workspace\\BigGraphsResearch\\src\\socfb-Haverford76.txt");
+        File input = new File("C:\\Users\\USP\\eclipse-workspace\\BigGraphsResearch\\src\\input.txt");
         Scanner scan = new Scanner(input);
         
         n = scan.nextInt();
         int e = scan.nextInt();
         d = new double[n][n];
+        dist = new double [n][n];
         adj = new int[n][n];
         for (int i = 0; i < n; i++)
             for (int j = 0; j < n; j++) {
@@ -104,27 +106,29 @@ public class SrcCode {
         	}
         }
         
-        r = new double[n];
-        R = new double[n];
-
-        long start, end;
-        long duration;
-        X = new double[n][k];
-        PA = new int[k][2];
-        start = System.currentTimeMillis();
-        FastMap(k, d);
-        System.out.println( "after fast map" );
-        calculateRs(X);
-        end = System.currentTimeMillis();
-        duration = end - start;
-        System.out.println("FastMap Duration: " + duration);
-
-        double[][] XT = transposeMatrix(X);
-        StressMinimization stressMinimization = new StressMinimization(d, XT);
-        System.out.println("FastMap stress: " + stressMinimization.getNormalizedStress());
-        checkIfError(X);
-        printResultsSummary(e);
-
+        automateForK(d);
+        
+//        r = new double[n];
+//        R = new double[n];
+//
+//        long start, end;
+//        long duration;
+//        X = new double[n][k];
+//        PA = new int[k][2];
+//        start = System.currentTimeMillis();
+//        FastMap(k, d);
+//        System.out.println( "after fast map" );
+//        calculateRs(X);
+//        end = System.currentTimeMillis();
+//        duration = end - start;
+//        System.out.println("FastMap Duration: " + duration);
+//
+//        double[][] XT = transposeMatrix(X);
+//        StressMinimization stressMinimization = new StressMinimization(d, XT);
+//        System.out.println("FastMap stress: " + stressMinimization.getNormalizedStress());
+//        checkIfError(X);
+//        printResultsSummary(e);
+//
 //        start = System.currentTimeMillis();
 //        double[][] res = MDSJ.classicalScaling(d, k);
 //        double[][] resT = transposeMatrix(res);
@@ -140,23 +144,99 @@ public class SrcCode {
 //        countFuzzyNo = 0;
 //        sumFuzzyNoInput = 0;
 //        defCount = 0;
+//        correctAnswers = 0;
 //        StressMinimization stressMinimization2 = new StressMinimization(d, res);
 //        System.out.println("MDS stress: " + stressMinimization2.getNormalizedStress());
 //        checkIfError(resT);
+//        System.out.println("definitive count: " + defCount + "!\n");
 //        printResultsSummary(e);
+    }
+    
+    
+    private static void automateForK(double d[][]) throws IOException
+    {
+    	FileWriter fileWriter = new FileWriter("data_set_1.txt");
+        PrintWriter printWriter = new PrintWriter(fileWriter);       
+        for ( int i=0 ; i<n ; i++ )
+        {
+        	for ( int j=i+1 ; j<n ; j++ )
+        	{
+        		dist[i][j] = dist[j][i] = d[i][j];
+        	}
+        }
+        
+        printWriter.println("k fastMapStress DefinitiveAnswers FuzzyAccuracy OverallAccuracy");
+        System.out.println("k fastMapStress DefinitiveAnswers FuzzyAccuracy OverallAccuracy");
+        while( k<=100 )
+        {
+        	for ( int i=0 ; i<n ; i++ )
+            {
+            	for ( int j=i+1 ; j<n ; j++ )
+            	{
+            		d[i][j] = d[j][i] = dist[i][j];
+            	}
+            }
+        	countYesAboveHalf = 0;
+            countFuzzyYes = 0;
+            sumFuzzyYesInput = 0;
+            countNoBelowHalf = 0;
+            countFuzzyNo = 0;
+            sumFuzzyNoInput = 0;
+            defCount = 0;
+            correctAnswers = 0;
+            col=-1;
+            r = new double[n];
+            R = new double[n];
+            long start, end;
+            long duration;
+            X = new double[n][k];
+            System.out.println("K:"+k);
+            PA = new int[k][2];
+            start = System.currentTimeMillis();
+            FastMap(k, d);
+            System.out.println( "after fast map" );
+            calculateRs(X);
+            end = System.currentTimeMillis();
+            duration = end - start;
+            System.out.println("FastMap Duration: " + duration);
+
+            double[][] XT = transposeMatrix(X);
+            StressMinimization stressMinimization = new StressMinimization(d, XT);
+            System.out.println("FastMap stress: " + stressMinimization.getNormalizedStress());
+            checkIfError(X);
+            System.out.print( k + " ");
+            printWriter.print(k + " ");
+            
+            System.out.print( stressMinimization.getNormalizedStress() + " ");
+            printWriter.print(stressMinimization.getNormalizedStress() + " ");
+            
+            System.out.print( ((defCount) / (n * (n - 1) / 2)) * 100 + " ");
+            printWriter.print(((defCount) / (n * (n - 1) / 2)) * 100 + " ");
+            
+            System.out.print( ((countYesAboveHalf + countNoBelowHalf) / (countFuzzyYes + countFuzzyNo)) * 100 + " ");
+            printWriter.print(((countYesAboveHalf + countNoBelowHalf) / (countFuzzyYes + countFuzzyNo)) * 100 + " ");
+            
+            System.out.print( (correctAnswers / ( n * (n-1) / 2 ))*100 + "\n");
+            printWriter.println((correctAnswers / ( n * (n-1) / 2 ))*100); 
+            
+            k += 5;
+        }
+        printWriter.close();
     }
 
     private static void printResultsSummary(int e) {
         System.out.println("*******************************");
         System.out.println( "nodes: " + n + "  Edges: " + e);
         System.out.println("k: " + k);
-        System.out.println( "fuzzyYes: " + countFuzzyYes + " fuzzyNo: " + countFuzzyNo );
+        //System.out.println( "fuzzyYes: " + countFuzzyYes + " fuzzyNo: " + countFuzzyNo );
         System.out.println("Definitive answers: " + ((defCount) / (n * (n - 1) / 2)) * 100 + "%");
         System.out.println("Fuzzy accuracy: " + ((countYesAboveHalf + countNoBelowHalf) / (countFuzzyYes + countFuzzyNo)) * 100 + "%");
         System.out.println("correct Answers (definitive + fuzzy): " + (correctAnswers / ( n * (n-1) / 2 ))*100 + "%" );
         //printNodesProjections();
         System.out.println("*******************************");
     }
+    
+    
 
     public static double[][] transposeMatrix(double[][] m) {
         double[][] temp = new double[m[0].length][m.length];
@@ -230,69 +310,6 @@ public class SrcCode {
     		System.out.println();
     	}
     }
-    
-    
-//    static class Point implements Comparable<Point> {
-//    	int index;
-//    	double x, y;
-//    	double[] dist;
-//		@Override
-//		public int compareTo(Point other) {
-//			if (Double.compare(this.x, other.x) == 0)
-//				return Double.compare(this.y, other.y);
-//			return Double.compare(this.x, other.x);
-//		}
-//    }
-//    
-//    void fun (double[][] d, double[] x, double[] y) {
-//    	int n = d.length;
-//    	Point[] p = new Point[n];
-//    	for (int i = 0; i < n; i++) {
-//    		p[i] = new Point();
-//    		p[i].index = i;
-//    		p[i].dist = d[i];
-//    		// TODO add point coordinates
-//    		p[i].x = 0;
-//    		p[i].y = 0;
-//    	}
-//    	// get ch
-//    	// do 2 pointers
-//    	List<Point> hull = convexHull(p);
-//    	double dist = 0, 
-//    }
-//    
-//    static boolean cw(Point a, Point b, Point c) {
-//    	return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) < 0;
-//    }
-//    
-//    static List<Point> convexHull(Point[] p) {
-//    	int n = p.length;
-//    	if (n <= 3)
-//    		return Arrays.asList(p);
-//    	Arrays.sort(p);
-//    	Stack<Point> q = new Stack<>();
-//    	for (int i = 0; i < n; q.push(p[i++])) {
-//    		while (q.size() >= 2) {
-//    			Point a = q.pop(), b = q.pop();
-//    			q.push(b);
-//    			if (cw(b, a, p[i])) {
-//    				q.push(a);
-//    				break;
-//    			}
-//    		}
-//    	}
-//        for (int i = n - 2, t = q.size(); i >= 0; q.push(p[i--])) {
-//        	while (q.size() > t) {
-//        		Point a = q.pop(), b = q.pop();
-//    			q.push(b);
-//    			if (cw(b, a, p[i])) {
-//    				q.push(a);
-//    				break;
-//    			}
-//        	}
-//        }
-//        return new ArrayList<>(q);
-//    }
 
     public static void chooseDistantObjects(double[][] d) {
         int secondO = (int) (Math.random() * n);
